@@ -30,12 +30,12 @@ This project is an n8n automation workflow that tracks the YouTube videos you wa
 ```bash
 git clone https://github.com/your-username/youtube-summary-n8n.git
 cd youtube-summary-n8n
-
+```
 ### 2. Setup Environment Variables
 -copy the example file
 ```bash
 cp .env.example .env
-
+```
 -fill in .env with your actual credentials
 
 ### 3. Import the Workflow into n8n
