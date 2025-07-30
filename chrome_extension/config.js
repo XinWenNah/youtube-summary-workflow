@@ -1,0 +1,3 @@
+const CONFIG = {
+  ENDPOINT: YOUR_LOCAL_WEBHOOK_URL
+};

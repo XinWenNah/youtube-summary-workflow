@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "YouTube sender",
+  "version": "1.0",
+  "description": "Send",
+  "permissions": ["tabs", "scripting"],
+  "host_permissions": ["https://www.youtube.com/*"],
+  "content_scripts": [
+    {
+      "matches": ["https://www.youtube.com/*"],
+      "js": ["config.js","content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_title": "YouTube to n8n"
+  }
+}
+

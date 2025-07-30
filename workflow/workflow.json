@@ -1,0 +1,412 @@
+{
+  "name": "Youtube Summary Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "{{ $env.WEBHOOK_PATH }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -80,
+        128
+      ],
+      "id": "2152a715-5c93-4469-89a9-878426c19611",
+      "name": "Webhook",
+      "webhookId": "{{ $env.WEBHOOK_ID }}"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-goog-api-key",
+              "value": "{{ $env.GEMINI_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"contents\": [\n    {\n      \"parts\": [\n        {\n          \"text\": \"Please summarize the video within 150 words.\"\n        },\n        {\n          \"file_data\": {\n            \"file_uri\": \n{{ '\"' +  $json.body.url + '\"' }}\n          }\n        }\n      ]\n    }\n  ]\n} ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        144,
+        128
+      ],
+      "id": "2800af41-0c5c-482b-b39e-ba480e244bb9",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "445154ea-4076-4b0a-8378-b8845f418da4",
+              "name": "Date",
+              "value": "={{ $now.toISODate() }}",
+              "type": "string"
+            },
+            {
+              "id": "7b5325e5-5b6d-4a3e-9dcb-84d9b5390f33",
+              "name": "Url",
+              "value": "={{ $('Webhook').item.json.body.url }}",
+              "type": "string"
+            },
+            {
+              "id": "4226c1e0-490a-411c-b5fa-3e1c12eac91e",
+              "name": "Summary",
+              "value": "={{ $json.candidates[0].content.parts[0].text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        368,
+        128
+      ],
+      "id": "ca1906bb-e690-4bc7-b454-6ad911b9a3be",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "{{ $env.SHEET_ID }}",
+          "mode": "list",
+          "cachedResultName": "{{ $env.SHEET_NAME }}",
+          "cachedResultUrl": "{{ $env.SHEET_URL }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "{{ $env.SHEET_GID }}",
+          "mode": "list",
+          "cachedResultName": "{{ $env.SHEET_GID_NAME }}",
+          "cachedResultUrl": "{{ $env.SHEET_GID_URL }}"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "candidates"
+          ],
+          "schema": [
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Summary",
+              "displayName": "Summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Url",
+              "displayName": "Url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        592,
+        128
+      ],
+      "id": "ab8bb59e-b54e-46cd-9388-5980a68979cd",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "{{ $env.GOOGLE_SHEETS_CRED_ID }}",
+          "name": "{{ $env.GOOGLE_SHEETS_CRED_NAME }}"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 23
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -80,
+        384
+      ],
+      "id": "55bd574d-2da3-42c4-9a33-b92d0de44f6c",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "{{ $env.SHEET_ID }}",
+          "mode": "list",
+          "cachedResultName": "{{ $env.SHEET_NAME }}",
+          "cachedResultUrl": "{{ $env.SHEET_URL }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "{{ $env.SHEET_GID }}",
+          "mode": "list",
+          "cachedResultName": "{{ $env.SHEET_GID_NAME }}",
+          "cachedResultUrl": "{{ $env.SHEET_GID_URL }}"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Date",
+              "lookupValue": "={{ $now.toISODate() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        144,
+        384
+      ],
+      "id": "2ef8c144-ce25-45a0-9d8c-f2767fd1a8d3",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "{{ $env.GOOGLE_SHEETS_CRED_ID }}",
+          "name": "{{ $env.GOOGLE_SHEETS_CRED_NAME }}"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an intelligent video content analyst. You will be given a list of short video summaries, each summarizing the content of a YouTube video the user has watched. Ensure that each subsection of your analysis does not exceed 100 words.\n\nYour tasks:\n1. Analyze all the summaries and group them into general categories, such as entertainment commentary, gaming commentary, educational content, tech news, lifestyle vlogs, etc.\n2. Identify the dominant content category or categories the user tends to watch.\n3. Evaluate whether the user's video preferences are too narrow (i.e., mostly focused on one or two categories) or diverse.\n4. Briefly explain what this indicates about the user's interests and possible viewing behavior trends.\n5.If the diversity of YouTube videos is low (i.e., fewer than 3 distinct topics), recommend a topic that is not closely related to the user's existing interests.\n\nOutput a structured analysis with:\n- Category distribution (with counts or percentages)\n- Main user interest(s)\n- Analysis of content diversity\n- Final conclusion about the user's vid\neo consumption tendency \n-Recommendation(Optional)\n\nHere is the list of summaries:\n{{ $json.summaries }}",
+        "options": {
+          "systemMessage": ""
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        528,
+        384
+      ],
+      "id": "4a7e9c77-7bef-4566-821a-416c21c8bb1f",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        528,
+        576
+      ],
+      "id": "5b1cf233-5844-4864-9f06-0def1885b4b1",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "{{ $env.GOOGLE_PALM_CRED_ID }}",
+          "name": "{{ $env.GOOGLE_PALM_CRED_NAME }"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst summaries = $input.all().map(item => item.json.Summary)\nreturn [{\n  json: {\n    summaries\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        352,
+        384
+      ],
+      "id": "1fd1d459-77b9-463b-b06d-e2553299e8c7",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "mode": "markdownToHtml",
+        "markdown": "={{ $json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.markdown",
+      "typeVersion": 1,
+      "position": [
+        880,
+        384
+      ],
+      "id": "db8fbfef-7cea-4eb3-a096-c4c8901ecff6",
+      "name": "Markdown"
+    },
+    {
+      "parameters": {
+        "fromEmail": "{{ $env.SENDER_EMAIL }}",
+        "toEmail": "{{ $env.RECEIVER_EMAIL }}",
+        "subject": "Youtube video's analysis",
+        "html": "={{ $json.data }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1088,
+        384
+      ],
+      "id": "4d997e48-8743-4580-9656-cb30d1f82331",
+      "name": "Send email",
+      "webhookId": "{{ $env.WEBHOOK_ID }}",
+      "credentials": {
+        "smtp": {
+          "id": "{{ $env.SMTP_ID }}",
+          "name": "{{ $env.SMTP_NAME }}"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Markdown",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Markdown": {
+      "main": [
+        [
+          {
+            "node": "Send email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": []
+}
