@@ -39,3 +39,13 @@ cp .env.example .env
 -fill in .env with your actual credentials
 
 ### 3. Import the Workflow into n8n
+
+### 4. Install the Chrome Extension
+
+1. Click on the **Webhook** node in your n8n workflow.
+2. Copy the **Production URL**.
+3. Open the `config.js` file inside the `chrome-extension` folder.
+4. Paste the URL into the appropriate field in `config.js`.
+5. Go to `chrome://extensions/` in your Chrome browser.
+6. Enable **Developer mode**.
+7. Click **Load unpacked** and select the `chrome-extension` folder.
